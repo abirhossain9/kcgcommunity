@@ -7,10 +7,10 @@ RUN apt-get update && apt-get install -y \
     libjpeg-dev \
     libfreetype6-dev \
     libzip-dev \
-    git \
-    unzip \
     libxml2-dev \
     libssl-dev \
+    git \
+    unzip \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install gd zip pdo pdo_mysql xml
 
@@ -27,13 +27,13 @@ COPY . .
 RUN chown -R www-data:www-data /var/www/html
 
 # Install Composer (PHP dependency manager)
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer --version=2.3.7
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer --version=2
 
 # Clear Composer cache
 RUN composer clear-cache
 
-# Install PHP dependencies with Composer
-RUN composer install --no-dev --optimize-autoloader --verbose
+# Install PHP dependencies with Composer (with debug info)
+RUN composer install --no-dev --optimize-autoloader --verbose --debug
 
 # Install NPM dependencies and build assets
 RUN npm install
