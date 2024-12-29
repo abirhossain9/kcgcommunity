@@ -1,8 +1,8 @@
 # Set the base image to PHP 8.1 with Apache
 FROM php:8.1-apache
 
-# Install necessary dependencies (including curl)
-RUN apt-get update && apt-get install -y \
+# Update package lists and install necessary dependencies
+RUN apt-get update -y && apt-get install -y \
     curl \
     php-cli \
     libpng-dev \
@@ -13,16 +13,12 @@ RUN apt-get update && apt-get install -y \
     libssl-dev \
     git \
     unzip \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    libmysqlclient-dev \
+    && apt-get clean
+
+# Install PHP extensions
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install gd zip pdo pdo_mysql xml
-
-# Install Composer manually
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
-
-# Debug step to ensure Composer is installed
-RUN ls -l /usr/local/bin/  # List all files to check if composer exists
-RUN which composer         # Check if Composer is available in the system path
-RUN composer --version     # Verify the installed version of Composer
 
 # Enable Apache mod_rewrite
 RUN a2enmod rewrite
@@ -37,7 +33,11 @@ COPY . .
 RUN chown -R www-data:www-data /var/www/html
 
 # Install PHP dependencies with Composer
-RUN composer install --no-dev --optimize-autoloader --verbose
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+
+# Debug step to ensure Composer is installed
+RUN which composer
+RUN composer --version
 
 # Install NPM dependencies and build assets
 RUN npm install
