@@ -1,14 +1,10 @@
-# Use Composer's official image as the base
-FROM composer:2.3 as composer
-
 # Set the base image to PHP 8.1 with Apache
 FROM php:8.1-apache
 
-# Copy the Composer from the composer image to the current image
-COPY --from=composer /usr/local/bin/composer /usr/local/bin/composer
-
-# Install necessary PHP extensions and dependencies
+# Install necessary dependencies (including curl)
 RUN apt-get update && apt-get install -y \
+    curl \
+    php-cli \
     libpng-dev \
     libjpeg-dev \
     libfreetype6-dev \
@@ -19,6 +15,14 @@ RUN apt-get update && apt-get install -y \
     unzip \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install gd zip pdo pdo_mysql xml
+
+# Install Composer manually
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+
+# Debug step to ensure Composer is installed
+RUN ls -l /usr/local/bin/  # List all files to check if composer exists
+RUN which composer         # Check if Composer is available in the system path
+RUN composer --version     # Verify the installed version of Composer
 
 # Enable Apache mod_rewrite
 RUN a2enmod rewrite
