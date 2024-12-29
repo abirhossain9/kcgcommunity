@@ -1,5 +1,11 @@
+# Use Composer's official image as the base
+FROM composer:2.3 as composer
+
 # Set the base image to PHP 8.1 with Apache
 FROM php:8.1-apache
+
+# Copy the Composer from the composer image to the current image
+COPY --from=composer /usr/local/bin/composer /usr/local/bin/composer
 
 # Install necessary PHP extensions and dependencies
 RUN apt-get update && apt-get install -y \
@@ -26,14 +32,8 @@ COPY . .
 # Set file permissions (adjust the user depending on your setup)
 RUN chown -R www-data:www-data /var/www/html
 
-# Install Composer (PHP dependency manager)
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer --version=2
-
-# Clear Composer cache
-RUN composer clear-cache
-
-# Install PHP dependencies with Composer (with debug info)
-RUN composer install --no-dev --optimize-autoloader --verbose --debug
+# Install PHP dependencies with Composer
+RUN composer install --no-dev --optimize-autoloader --verbose
 
 # Install NPM dependencies and build assets
 RUN npm install
