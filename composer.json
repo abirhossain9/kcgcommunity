@@ -12,8 +12,7 @@
         "intervention/image": "^3.10",
         "laravel/framework": "^11.9",
         "laravel/tinker": "^2.9",
-        "yajra/laravel-datatables-oracle": "11.0",
-        "ext-gd": "*"
+        "yajra/laravel-datatables-oracle": "11.0"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
