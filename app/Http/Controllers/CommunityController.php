@@ -4,8 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Community;
 use Illuminate\Http\Request;
-use Intervention\Image\ImageManager;
-use Intervention\Image\Drivers\Gd\Driver;
 
 class CommunityController extends Controller
 {
@@ -37,17 +35,8 @@ class CommunityController extends Controller
             $imageName = time() . '_' . $image->getClientOriginalName();
             $imagePath = 'uploads/communities/' . $imageName;
 
-            // Initialize the ImageManager with the GD driver
-            $manager = new ImageManager(new Driver());
-
-            // Read the image from the file
-            $image = $manager->read($image);
-
-            // Resize the image (scale by width)
-            $image->scale(300); // You can also set the height, or use 'resize()' instead for fixed dimensions
-
-            // Save the resized image
-            $image->save(public_path($imagePath));
+            // Resize the image using native PHP
+            $this->resizeImage($image, public_path($imagePath), 300);
         }
 
         // Create a new community with the image path
@@ -89,17 +78,8 @@ class CommunityController extends Controller
             $imageName = time() . '_' . $image->getClientOriginalName();
             $imagePath = 'uploads/communities/' . $imageName;
 
-            // Initialize the ImageManager with the GD driver
-            $manager = new ImageManager(new Driver());
-
-            // Read the image from the file
-            $image = $manager->read($image);
-
-            // Resize the image (scale by width)
-            $image->scale(300); // You can adjust this to your preferred width
-
-            // Save the resized image
-            $image->save(public_path($imagePath));
+            // Resize the image using native PHP
+            $this->resizeImage($image, public_path($imagePath), 300);
 
             // Update the image path in the community model
             $community->image = $imagePath;
@@ -129,5 +109,55 @@ class CommunityController extends Controller
         $community->delete();
 
         return redirect()->route('admin.communities.index')->with('success', 'Community deleted successfully.');
+    }
+
+    // Resize image function
+    private function resizeImage($image, $destinationPath, $width)
+    {
+        // Get image info
+        list($originalWidth, $originalHeight, $imageType) = getimagesize($image);
+
+        // Calculate the new height to maintain aspect ratio
+        $height = ($originalHeight / $originalWidth) * $width;
+
+        // Create a new image resource based on the file type
+        switch ($imageType) {
+            case IMAGETYPE_JPEG:
+                $src = imagecreatefromjpeg($image);
+                break;
+            case IMAGETYPE_PNG:
+                $src = imagecreatefrompng($image);
+                break;
+            case IMAGETYPE_GIF:
+                $src = imagecreatefromgif($image);
+                break;
+            default:
+                return false;
+        }
+
+        // Create a blank true color image with the new dimensions
+        $dst = imagecreatetruecolor($width, $height);
+
+        // Resample the image to the new size
+        imagecopyresampled($dst, $src, 0, 0, 0, 0, $width, $height, $originalWidth, $originalHeight);
+
+        // Save the resized image
+        switch ($imageType) {
+            case IMAGETYPE_JPEG:
+                imagejpeg($dst, $destinationPath);
+                break;
+            case IMAGETYPE_PNG:
+                imagepng($dst, $destinationPath);
+                break;
+            case IMAGETYPE_GIF:
+                imagegif($dst, $destinationPath);
+                break;
+        }
+
+        // Free up memory
+        imagedestroy($src);
+        imagedestroy($dst);
+
+        return true;
     }
 }
