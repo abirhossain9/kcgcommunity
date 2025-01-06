@@ -4,8 +4,6 @@ namespace App\Http\Controllers;
 use App\Models\Post;
 use App\Models\Community;
 use Illuminate\Http\Request;
-use Intervention\Image\ImageManager;
-use Intervention\Image\Drivers\Gd\Driver;
 
 class PostController extends Controller
 {
@@ -59,17 +57,8 @@ class PostController extends Controller
             $imageName = time() . '_' . $image->getClientOriginalName();
             $imagePath = 'uploads/posts/' . $imageName;
 
-            // Initialize the ImageManager with the GD driver
-            $manager = new ImageManager(new Driver());
-
-            // Read the image from the file
-            $image = $manager->read($image);
-
-            // Resize the image (scale by width)
-            $image->scale(800); // You can adjust the scale as needed, or use resize() for fixed dimensions
-
-            // Save the resized image
-            $image->save(public_path($imagePath));
+            // Move the image to the public folder
+            $image->move(public_path('uploads/posts'), $imageName);
         }
 
         // Create the post associated with the selected community
@@ -115,17 +104,8 @@ class PostController extends Controller
             $imageName = time() . '_' . $image->getClientOriginalName();
             $imagePath = 'uploads/posts/' . $imageName;
 
-            // Initialize the ImageManager with the GD driver
-            $manager = new ImageManager(new Driver());
-
-            // Read the image from the file
-            $image = $manager->read($image);
-
-            // Resize the image (scale by width)
-            $image->scale(800); // You can adjust the scale as needed, or use resize() for fixed dimensions
-
-            // Save the resized image
-            $image->save(public_path($imagePath));
+            // Move the image to the public folder
+            $image->move(public_path('uploads/posts'), $imageName);
         }
 
         // Update the post details
@@ -155,6 +135,7 @@ class PostController extends Controller
         return redirect()->route('admin.posts.index')->with('success', 'Post deleted successfully.');
     }
 
+    // Store a comment on a post
     public function storeComment(Request $request, Post $post)
     {
         $request->validate([
@@ -169,10 +150,10 @@ class PostController extends Controller
         return redirect()->route('posts.show', $post->id)->with('success', 'Comment added successfully.');
     }
 
+    // Show the post with its comments
     public function show(Post $post)
     {
         $comments = $post->comments()->latest()->get(); // Fetch comments for the post
         return view('posts.show', compact('post', 'comments'));
     }
-
 }
