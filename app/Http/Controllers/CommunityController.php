@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Http\Controllers;
 
 use App\Models\Community;
@@ -25,7 +24,7 @@ class CommunityController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'description' => 'required|string',
+            'description' => 'nullable|string',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Image validation
         ]);
 
@@ -35,15 +34,21 @@ class CommunityController extends Controller
             $imageName = time() . '_' . $image->getClientOriginalName();
             $imagePath = 'uploads/communities/' . $imageName;
 
-            // Resize the image using native PHP
-            $this->resizeImage($image, public_path($imagePath), 300);
+            // Validate the image type by MIME type
+            $validMimes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif'];
+            if (in_array($image->getMimeType(), $validMimes)) {
+                // Move the file to the desired location
+                $image->move(public_path('uploads/communities'), $imageName);
+            } else {
+                return back()->with('error', 'Invalid image type');
+            }
         }
 
-        // Create a new community with the image path
+        // Create the community
         Community::create([
             'name' => $request->input('name'),
             'description' => $request->input('description'),
-            'image' => $imagePath, // Save the image path
+            'image' => $imagePath,
         ]);
 
         return redirect()->route('admin.communities.index')->with('success', 'Community created successfully.');
@@ -56,16 +61,17 @@ class CommunityController extends Controller
         return view('admin.communities.edit', compact('community'));
     }
 
-    // Update the specified community in the database
+    // Update the specified community
     public function update(Request $request, $id)
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'description' => 'required|string',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Image validation
+            'description' => 'nullable|string',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
         $community = Community::findOrFail($id);
+        $imagePath = $community->image;
 
         // Handle image upload and deletion
         if ($request->hasFile('image')) {
@@ -78,86 +84,39 @@ class CommunityController extends Controller
             $imageName = time() . '_' . $image->getClientOriginalName();
             $imagePath = 'uploads/communities/' . $imageName;
 
-            // Resize the image using native PHP
-            $this->resizeImage($image, public_path($imagePath), 300);
-
-            // Update the image path in the community model
-            $community->image = $imagePath;
+            // Validate the image type by MIME type
+            $validMimes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif'];
+            if (in_array($image->getMimeType(), $validMimes)) {
+                // Move the file to the desired location
+                $image->move(public_path('uploads/communities'), $imageName);
+            } else {
+                return back()->with('error', 'Invalid image type');
+            }
         }
 
-        // Update other fields
+        // Update the community details
         $community->update([
             'name' => $request->input('name'),
             'description' => $request->input('description'),
-            'image' => $community->image, // Updated image if any
+            'image' => $imagePath,
         ]);
 
         return redirect()->route('admin.communities.index')->with('success', 'Community updated successfully.');
     }
 
-    // Remove the specified community from the database
+    // Remove the specified community
     public function destroy($id)
     {
         $community = Community::findOrFail($id);
 
         // Delete the image file if it exists
         if ($community->image && file_exists(public_path($community->image))) {
-            unlink(public_path($community->image)); // Delete the image file
+            unlink(public_path($community->image));
         }
 
-        // Delete the community record
+        // Delete the community
         $community->delete();
 
         return redirect()->route('admin.communities.index')->with('success', 'Community deleted successfully.');
-    }
-
-    // Resize image function
-    private function resizeImage($image, $destinationPath, $width)
-    {
-        // Get image info
-        list($originalWidth, $originalHeight, $imageType) = getimagesize($image);
-
-        // Calculate the new height to maintain aspect ratio
-        $height = ($originalHeight / $originalWidth) * $width;
-
-        // Create a new image resource based on the file type
-        switch ($imageType) {
-            case IMAGETYPE_JPEG:
-                $src = imagecreatefromjpeg($image);
-                break;
-            case IMAGETYPE_PNG:
-                $src = imagecreatefrompng($image);
-                break;
-            case IMAGETYPE_GIF:
-                $src = imagecreatefromgif($image);
-                break;
-            default:
-                return false;
-        }
-
-        // Create a blank true color image with the new dimensions
-        $dst = imagecreatetruecolor($width, $height);
-
-        // Resample the image to the new size
-        imagecopyresampled($dst, $src, 0, 0, 0, 0, $width, $height, $originalWidth, $originalHeight);
-
-        // Save the resized image
-        switch ($imageType) {
-            case IMAGETYPE_JPEG:
-                imagejpeg($dst, $destinationPath);
-                break;
-            case IMAGETYPE_PNG:
-                imagepng($dst, $destinationPath);
-                break;
-            case IMAGETYPE_GIF:
-                imagegif($dst, $destinationPath);
-                break;
-        }
-
-        // Free up memory
-        imagedestroy($src);
-        imagedestroy($dst);
-
-        return true;
     }
 }
