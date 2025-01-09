@@ -156,4 +156,9 @@ class PostController extends Controller
         $comments = $post->comments()->latest()->get(); // Fetch comments for the post
         return view('posts.show', compact('post', 'comments'));
     }
+
+    public function feedback()
+    {
+        return view('home.feedback');
+    }
 }

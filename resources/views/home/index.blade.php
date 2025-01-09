@@ -60,7 +60,7 @@
     <div class="container text-center">
         <h1>Welcome to Kcg.edu Community Blog</h1>
         <p class="lead">Connect with peers, share ideas, and explore amazing content from various communities.</p>
-        <a href="#" class="btn btn-light btn-lg mt-3">Join a Community</a>
+{{--        <a href="#" class="btn btn-light btn-lg mt-3">Join a Community</a>--}}
     </div>
 </div>
 

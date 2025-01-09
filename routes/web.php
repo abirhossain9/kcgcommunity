@@ -17,6 +17,8 @@ Route::get('/posts', [PostController::class, 'allPosts'])->name('posts.index');
 Route::get('/post/{post}', [PostController::class, 'show'])->name('posts.show');
 Route::post('/posts/{post}/comments', [PostController::class, 'storeComment'])->name('posts.storeComment');
 
+Route::get('/feedback', [PostController::class, 'feedback'])->name('feedback');
+
 Route::group(['middleware' => ['auth']], function () {
 
     Route::group(['prefix' => 'admin', 'as' => 'admin.'], function () {
